@@ -1,0 +1,156 @@
+.ct-div-row{
+	display:block;
+}
+
+.ct-div-row-alt div{
+	background-color:#f5f5f5;
+}
+
+.ct-div-header-cell {
+	position:relative;
+	overflow:hidden;
+	padding:.2em 0em .2em .5em;
+	white-space:nowrap;
+	text-align:left;
+	border-top:2px solid #999;
+	border-bottom:2px solid #999;
+	border-left:1px solid #999;
+	box-sizing:border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	min-height:1.4em;
+	display:table-cell;
+}
+
+.ct-div-header-cell-name {
+	text-decoration:underline;
+	cursor:pointer;
+}
+
+.ct-div-header-cell:first-child {
+	border-top-left-radius:8px;
+}
+
+.ct-div-header-cell:last-child {
+	border-top-right-radius:8px;
+}
+
+.ct-div-row div{
+	border-left:1px solid #999;
+	overflow:hidden;
+}
+
+.ct-div-row:last-child div:first-child {
+	border-bottom-left-radius: 8px;
+}
+
+.ct-div-row:last-child div:last-child {
+	border-bottom-right-radius: 8px;
+}
+
+.ct-div-row:last-child  div{
+	border-bottom:1px solid #999;
+}
+
+.ct-div-row-expand {
+	float:left;
+	z-index:10;
+	position:relative;
+	padding-right:1em;
+	cursor:pointer;
+}
+
+.ct-div-header-row div{
+	background-color:#eee;
+}
+
+.ct-div-header-row div:last-child{
+	border-right:1px solid #999;
+}
+.ct-div-header-row div:first-child{
+	border-left:1px solid #999;
+}
+.ct-div-row div:last-child, .ct-div-row-alt div:last-child {
+	border-right:1px solid #999;
+}
+
+.ct-div-floating-header-row{
+	position:fixed;
+	top:0;
+	left:0;
+	z-index:10;
+}
+
+
+.ct-div-header-row {
+	display: table-row;
+}
+
+.ct-header-filter{
+	float:right;
+	margin-right:.45em;
+	border:1px solid #999;
+	padding:.2em .2em 0 .2em;
+	border-radius:4px;
+	background-color:#fff;
+	cursor:pointer;
+}
+
+.ct-header-filter-applied{
+	background-color:#ddd !important;
+}
+
+.ct-header-sort{
+	float:right;
+	margin-right:.3em;
+	font-weight: bold;
+}
+
+.ct-div-cell {
+	position:relative;
+	text-align:left;
+	padding:.2em 0em .2em .5em;
+	min-height:1.2em;
+	box-sizing:border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	white-space: pre-line;
+	vertical-align: middle;
+	border-bottom:1px dotted #aaa;
+	display: table-cell;
+}
+
+.ct-back-to-top {
+	position: fixed;
+	opacity:.41;
+	border:1px solid #aaa;
+	border-radius:8px;
+	padding:.5em;
+	bottom:1em;
+	right:2em;
+	z-index:10;
+	background-color:#eee;
+	color:orange;
+}
+
+.ct-back-to-top:hover{
+	opacity:1;
+}
+
+.ct-back-to-top a{
+	text-decoration: underline;
+	cursor:pointer;
+}
+
+.ct-col-filter {
+	z-index:10;
+	position:fixed;
+	border:1px solid #aaa;
+	border-radius:8px;
+	background-color:#fff;
+	padding:1em;
+}
+
+.ct-col-filter select, .ct-col-filter input[type=text]{
+	display:block;
+}
