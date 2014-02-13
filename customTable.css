@@ -154,3 +154,10 @@
 .ct-col-filter select, .ct-col-filter input[type=text]{
 	display:block;
 }
+
+.ct-div-child-row {
+	margin-left:50px;
+	margin-top:10px;
+	margin-bottom:10px;
+	box-shadow:1px 1px 1px;
+}

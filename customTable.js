@@ -152,7 +152,7 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 				} 
 				var childInd = "";
 				if (_dataColumns[x].child != null && _dataColumns[x].child != 'undefined') {
-					childInd = "<span class='ct-div-row-expand' onclick='customTable.showChildren(\"" + _tableName + "\"," + keyType + val + keyType + ",\"" + _dataColumns[x].child + "\",\"" + _dataColumns[x].childKey + "\");'>+</span>";
+					childInd = "<span class='ct-div-row-expand' onclick='customTable.showChildren(this,\"" + _tableName + "\"," + keyType + val + keyType + ",\"" + _dataColumns[x].child + "\",\"" + _dataColumns[x].childKey + "\");'>+</span>";
 				}
 				alt.indexes[x].values.push({value: val, index: i});
 				if (visible == "")
@@ -311,29 +311,17 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 	},
 	
 	returnAsHtml = function (index) {
-	    var header1 = "<div class='ct-div-header-row'>";
-	    
-		var header = "";
-		
-	    for (var x = 0; x < _tableHeaders.length; x++){
-			if (_dataColumns[x].visible) {
-				header += "<div name='" + _dataColumns[x].field + "' style='width:" + _tableWidths[x] + ";min-width:" + _tableWidths[x] + ";' class='ct-div-header-cell'>";
-				header += "<a class='ct-header-filter' onclick='customTable.showFilter(this," + x.toString() + ");'>&Psi;</a><a class='ct-header-sort' name='sortInd" + x.toString() + "'></a><a onclick='customTable.sortGrid(\"" + _tableName + "\"," + x.toString() + ");' class='ct-div-header-cell-name'>";
-				header += _tableHeaders[x] + "</a></div>";
-			}
-		}
-
-	    header += "</div>";
-	    
-		var result = header1 + header + "<div id='_" + _tableName + "tableBody'>";
+		var result = "";
+		var header = buildHeader(true);
+		result += header + "<div id='_" + _tableName + "tableBody'>";
 		
 	    result += _buildBody(index, 0, index.length);
 		
 		result += "</div>";
 		if (_scrolling) {
 			result += "<div class='ct-back-to-top'><a onclick='window.scrollTo(0,0);'>Back to top</a></div>";
-			result += "<div id='customTableFloatingHeader' class='ct-div-header-row ct-div-floating-header-row' style='display:none;left:" + _parentContainer.getBoundingClientRect().left + "px;'>" + header;
-			result += "<div id='customTableColFilter' class='ct-col-filter' style='display:none;' ctName='" + _tableName + "'><div>filter all values that are:</div><select id='customTableFilterOperator'><option value='='>=</option><option value='<'>&lt;</option></select><input id='customTableFilterValue' type='text' /><input type='button' value='apply' onclick='customTable.applyFilter(true);' /><input type='button' value='clear all' onclick='customTable.applyFilter(false);' /><input type='button' value='cancel' onclick='customTable.cancelFilter();'/>";
+			result += "<div id='customTableFloatingHeader' class='ct-div-header-row ct-div-floating-header-row' style='display:none;left:" + _parentContainer.getBoundingClientRect().left + "px;'>" + header + "</div>";
+			result += "<div id='customTableColFilter' class='ct-col-filter' style='display:none;' ctName='" + _tableName + "'><div>filter all values that are:</div><select id='customTableFilterOperator'><option value='='>=</option><option value='<'>&lt;</option></select><input id='customTableFilterValue' type='text' /><input type='button' value='apply' onclick='customTable.applyFilter(true);' /><input type='button' value='clear all' onclick='customTable.applyFilter(false);' /><input type='button' value='cancel' onclick='customTable.cancelFilter();'/></div>";
 			
 			customTable.addEvent(window,"scroll",function(){
 				var tableTop = _parentContainer.getBoundingClientRect().top;
@@ -347,6 +335,30 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 			customTable.addEvent(document,'mousemove', customTable.getMouseXY);
 		}
 	    return result;
+	},
+	
+	buildHeader = function(main) {
+		var header1 = "<div class='ct-div-header-row'>";
+	    
+		var header = "";
+		
+	    for (var x = 0; x < _tableHeaders.length; x++){
+			if (_dataColumns[x].visible) {
+				header += "<div name='" + _dataColumns[x].field + "' style='width:" + _tableWidths[x] + ";min-width:" + _tableWidths[x] + ";' class='ct-div-header-cell'>";
+				if (main) {
+					header += "<a class='ct-header-filter' onclick='customTable.showFilter(this," + x.toString() + ");'>&Psi;</a><a class='ct-header-sort' name='sortInd" + x.toString() + "'></a><a onclick='customTable.sortGrid(\"" + _tableName + "\"," + x.toString() + ");' class='ct-div-header-cell-name'>";
+					header += _tableHeaders[x] + "</a>";
+				}
+				else {
+					header += _tableHeaders[x];
+				}
+				header += "</div>";
+			}
+		}
+
+	    header += "</div>";
+		
+		return header1 + header;
 	},
 	
 	rebuildBody = function(index, start, end) {
@@ -384,11 +396,12 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		loadAndFill: loadAndFill,
 		rebuildBody: rebuildBody,
 		sortByColumn: sortByColumn,
-		filterByColumn: filterByColumn
+		filterByColumn: filterByColumn,
+		buildHeader: buildHeader
 	};
 };
 
-customTable.showChildren = function (parentTable,parentKeyValue,child,childKey) {
+customTable.showChildren = function (row,parentTable,parentKeyValue,child,childKey) {
 	var childTable = customTable.retrieveTable(child);
 	var childIndexes = customTable._findAlternateIndex(child);
 	var childIndex = null;
@@ -399,8 +412,25 @@ customTable.showChildren = function (parentTable,parentKeyValue,child,childKey) 
 		}
 	}
 	if (childIndex != null && childIndex != 'undefined') {
-		var childRows = customTable.getAllIndexesNonUniqueAlternate(parentKeyValue,childIndex.values,"value","index");
-		console.log(childTable.getTableRows(childRows));
+		var childRowIndexes = customTable.getAllIndexesNonUniqueAlternate(parentKeyValue,childIndex.values,"value","index");
+		var childRows = childTable.getTableRows(childRowIndexes)
+		var newTableRow = document.createElement("div");
+		newTableRow.className='ct-div-child-row';
+		newTableRow.style.display="table";
+		newTableRow.style.width = (parseFloat(row.parentNode.parentNode.parentNode.getBoundingClientRect().width) - 50.0).toString() + 'px';
+		var headerRow = document.createElement("div");
+		headerRow.className = "ct-div-header-row";
+		var header = childTable.buildHeader(false);
+		headerRow.innerHTML = header.substring(31,header.length-6);
+		newTableRow.appendChild(headerRow);
+		for (var x = 0; x < childRows.length; x++) {			
+			var newRow = document.createElement("div");
+			newRow.className = "ct-div-row";
+			newRow.style.display = "table-row";
+			newRow.innerHTML = childRows[x];
+			newTableRow.appendChild(newRow);
+		}
+		customTable._insertNodeAfter(row.parentNode.parentNode.parentNode.parentNode,newTableRow,row.parentNode.parentNode.parentNode);
 	}
 };
 
@@ -571,6 +601,7 @@ customTable.spaceWords = function (word) {
 	}
 	
 	if (start > 0) result += " " + word.substring(start);
+	else result = word;
 	
 	return result;
 };
@@ -622,4 +653,8 @@ customTable.addEvent = function(elem, type, eventHandle) {
     } else {
         elem["on"+type]=eventHandle;
     }
+};
+
+customTable._insertNodeAfter = function (parentNode, newNode, afterNode) {
+	parentNode.insertBefore(newNode, afterNode.nextSibling);
 };
