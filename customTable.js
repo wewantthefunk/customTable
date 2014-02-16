@@ -35,13 +35,13 @@ customTable._findAlternateIndex = function(tableName){
 	return foundIndex;
 };
 
-customTable.initTable = function(name, dataCols, parentContainer, usePixelsForWidth)  {
-	var newTable = new customTable._customTableDefinition(name, dataCols, parentContainer, usePixelsForWidth);
+customTable.initTable = function(name, dataCols, parentContainer, usePixelsForWidth, saveCallback)  {
+	var newTable = new customTable._customTableDefinition(name, dataCols, parentContainer, usePixelsForWidth, saveCallback);
 	customTable._tables.push(newTable);
 	return newTable;
 };
 
-customTable._customTableDefinition = function(name, dataCols, parentContainer, usePixelsForWidth) {
+customTable._customTableDefinition = function(name, dataCols, parentContainer, usePixelsForWidth, saveCallback) {
     var _usePixels = usePixelsForWidth,
 		_tableName = name,
         _dataColumns = dataCols,
@@ -55,6 +55,18 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		_dataSource = null,
 		_childRows = [],
 		_editedData = [],
+		_saveCallback = saveCallback,
+	
+	execSaveCallback = function() {
+		var result = false;
+		if (_editedData.length > 0) {
+			if (_saveCallback != null && _saveCallback == 'undefined')
+				result = _saveCallback(_editedData);
+			else result = true;
+		}
+		else result = true;
+		return result;
+	},
 	
 	getEditedRows = function() {
 		return _editedData;
@@ -253,13 +265,11 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 				case 88:
 					if (e.altKey && e.ctrlKey && e.shiftKey) {
 						var cx = document.activeElement;
-						console.log(cx);
 						if (cx.getAttribute("ctchild") == "1") {
 							cx.childNodes[0].childNodes[0].click();
 						}
 					}
 				default:
-					console.log(e.keyCode);
 					break;
 			}
 		}
@@ -403,7 +413,7 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 			result += "<div id='customTableFloatingHeader' class='ct-div-header-row ct-div-floating-header-row' style='display:none;left:" + _parentContainer.getBoundingClientRect().left + "px;'>" + header + "</div>";
 			result += "<div id='customTableColFilter' class='ct-col-filter' style='display:none;' ctName='" + _tableName + "'><div>filter all values that are:</div><select id='customTableFilterOperator'><option value='='>=</option><option value='<'>&lt;</option></select><input id='customTableFilterValue' type='text' /><input type='button' value='apply' onclick='customTable.applyFilter(true);' /><input type='button' value='clear all' onclick='customTable.applyFilter(false);' /><input type='button' value='cancel' onclick='customTable.cancelFilter();'/></div>";
 			result += "<span id='floatingEdit'><input type='text' id='floatingEditText' /><input type='button' value='ok' onclick='customTable.applyEdit();' /><input type='button' value='cancel' onclick='customTable.cancelEdit();' /></span>";
-			
+			result += "<div class='ct-save'><a onclick='customTable.saveEdits(\"" + getTableName() + "\");'>Save</a></div>";
 			customTable.addEvent(window,"scroll",function(){
 				var tableTop = _parentContainer.getBoundingClientRect().top;
 				if (document.body.scrollTop > tableTop) {
@@ -479,8 +489,29 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		sortByColumn: sortByColumn,
 		filterByColumn: filterByColumn,
 		buildHeader: buildHeader,
-		rebuildRow: rebuildRow
+		rebuildRow: rebuildRow,
+		getEditedRows: getEditedRows,
+		execSaveCallback: execSaveCallback
 	};
+};
+
+customTable.saveEdits = function(table) {
+	var t = customTable.retrieveTable(table);
+	var e = t.execSaveCallback();
+	var tBody = document.getElementById('_' + table + 'tableBody');
+	var saved = false;
+	if (e){
+		saved = true;
+	}
+	
+	if (saved) {
+		var ec = tBody.getElementsByClassName('ct-edited-cell');
+		for (var i = ec.length - 1; i > -1; i--) {
+			ec[i].parentNode.removeChild(ec[i]);
+		}
+	} else {
+		alert('edited data not saved');
+	}
 };
 
 customTable.applyEdit = function() {
@@ -490,7 +521,7 @@ customTable.applyEdit = function() {
 	if (customTable._currentEditTableName == null || customTable._currentEditTableName == 'undefined') return;
 	var val = document.getElementById('floatingEditText').value;
 	table.rebuildRow(customTable._currentEditRowIndex, customTable._currentEditCellIndex, val);
-	customTable._currentEdit.innerHTML = val;
+	customTable._currentEdit.innerHTML = "<span class='ct-edited-cell'>&diams;</span>" + val;
 	customTable.closeEdit();
 };
 

@@ -141,11 +141,24 @@
 	color:orange;
 }
 
-.ct-back-to-top:hover{
+.ct-save{
+	position: fixed;
+	opacity:.41;
+	border:1px solid #aaa;
+	border-radius:8px;
+	padding:.5em;
+	bottom:4em;
+	right:2em;
+	z-index:10;
+	background-color:#eee;
+	color:orange;
+}
+
+.ct-back-to-top:hover, .ct-save:hover{
 	opacity:1;
 }
 
-.ct-back-to-top a{
+.ct-back-to-top a, .ct-save a{
 	text-decoration: underline;
 	cursor:pointer;
 }
@@ -180,6 +193,13 @@
 	border:1px solid #888;
 	border-radius:4px;
 	font-size:.7em;
+}
+
+.ct-edited-cell {
+	vertical-align:super;
+	font-size:.7em;
+	margin-right:.7em;
+	color:brown;
 }
 
 #floatingEdit {
