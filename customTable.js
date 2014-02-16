@@ -9,6 +9,9 @@ customTable.mouseY = 0;
 customTable._filterValues = [];
 customTable._currentSortIndex = 0;
 customTable._currentEdit = null;
+customTable._currentEditRowIndex = null;
+customTable._currentEditCellIndex = null;
+customTable._currentEditTableName = null;
 
 customTable.retrieveTable = function(name){
 	var result = null;
@@ -51,6 +54,11 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		_currentIndex = {},
 		_dataSource = null,
 		_childRows = [],
+		_editedData = [],
+	
+	getEditedRows = function() {
+		return _editedData;
+	},
 	
     getDataColumns = function() {
         return _dataColumns;
@@ -79,7 +87,7 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		alt.name = _tableName;
 		alt.indexes = [];
 		
-		var _dataSource = JSON.parse(json);
+		_dataSource = JSON.parse(json);
 		var scrollBarOffset = 0;
 		var totalWidths = 0;
 		if (_dataSource.length * 20 > document.body.clientHeight) {
@@ -129,48 +137,12 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 			}
         }
 		
-        _dataSource = JSON.parse(json);
 		var unsorted = [];
 		var masterCount = -99;
         for (var i = 0; i < _dataSource.length; i++) {
 			masterCount+=100;
 			unsorted.push({index:i});
-            var t = "";
-			var keyType = "'";
-            for (var x = 0; x < _dataColumns.length; x++) {
-                var visible = "display:none;";
-                if (_dataColumns[x].visible == null || _dataColumns[x].visible == 'undefined' || _dataColumns[x].visible)
-                    visible = "";
-				
-				var val = _dataSource[i][_dataColumns[x].field];
-				if (val == null || val == 'undefined' || val == "") val = "";
-				switch (_dataColumns[x].dataType) {
-					case "int":
-						val = parseInt(val);
-						keyType = "";
-						break;
-					case "float":
-						val = parseFloat(val);
-						keyType = "";
-						break;
-				} 
-				if (_dataColumns[x].editType == null || _dataColumns[x].editType == 'undefined') _dataColumns[x].editType = '0';
-				_dataColumns[x].editType == _dataColumns[x].editType.toString();
-				var edit = "";
-				if (parseInt(_dataColumns[x].editType) > 0) {
-					edit = "<span class='ct-edit-cell' onclick='customTable.editCell(this.parentNode.parentNode);'>&para;</span>";
-				}
-				var childInd = "";
-				var hasChildren = "0";
-				if (_dataColumns[x].child != null && _dataColumns[x].child != 'undefined') {
-					childInd = "<span class='ct-div-row-expand' onclick='customTable.showChildren(this,\"" + _tableName + "\"," + keyType + val + keyType + ",\"" + _dataColumns[x].child + "\",\"" + _dataColumns[x].childKey + "\");'>+</span>";
-					hasChildren="1";
-				}
-				alt.indexes[x].values.push({value: val, index: i});
-				if (visible == "")
-					t += "<div ctchild='" + hasChildren + "' ctedit='" + _dataColumns[x].editType + "' tabindex='" + masterCount.toString() + "' name='" + _dataColumns[x].field + "' style='" + visible + "min-width:" + _tableWidths[x] + ";width:" + _tableWidths[x] + ";max-width:" + _tableWidths[x] + ";' class='ct-div-cell' onfocus='customTable.cancelEdit();'><span >" + childInd + edit + "<span>" + val + "</span></span></div>";
-				masterCount++;
-			}
+            var t = buildRow(masterCount,i,"\"",alt);
             if (t != "") _tableRows.push(t);
         }
 		
@@ -184,7 +156,77 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		}
 		customTable._tablesAltIndexes.push(alt);
     },
-        
+    
+	rebuildRow = function(row,cell,val){
+		var foundEdited = null;
+		for (var z = 0; z < _editedData.length; z++) {
+			if (_editedData[z].index == row) {
+				foundEdited = _editedData[z];
+				break;
+			}
+		}
+		_dataSource[row][cell] = val;
+		if (foundEdited == null) {
+			foundEdited = _dataSource[row];
+			foundEdited.index = row;
+			_editedData.push(foundEdited);
+		}
+		else foundEdited[cell] = val;
+		_tableRows[row] = buildRow(_dataSource[row].masterCount,row,"\"",null);
+		var alt = customTable._findAlternateIndex(getTableName());
+		for (var i = 0; i < _dataColumns.length; i++) {
+			if (_dataColumns[i].field == cell) {
+				for (var x = 0; x < alt.indexes[i].length; x++) {
+					if (alt.indexes[i][x].index == row) {
+						alt.indexes[i][x].value = val;
+						break;
+					}
+				}
+				break;
+			}
+		}
+	},
+	
+	buildRow = function(masterCount,i,keyType,alt) {
+		_dataSource[i].masterCount = masterCount;
+		var t = "";
+		for (var x = 0; x < _dataColumns.length; x++) {
+			var visible = "display:none;";
+			if (_dataColumns[x].visible == null || _dataColumns[x].visible == 'undefined' || _dataColumns[x].visible)
+				visible = "";
+			
+			var val = _dataSource[i][_dataColumns[x].field];
+			if (val == null || val == 'undefined' || val == "") val = "";
+			switch (_dataColumns[x].dataType) {
+				case "int":
+					val = parseInt(val);
+					keyType = "";
+					break;
+				case "float":
+					val = parseFloat(val);
+					keyType = "";
+					break;
+			} 
+			if (_dataColumns[x].editType == null || _dataColumns[x].editType == 'undefined') _dataColumns[x].editType = '0';
+			_dataColumns[x].editType == _dataColumns[x].editType.toString();
+			var edit = "";
+			if (parseInt(_dataColumns[x].editType) > 0) {
+				edit = "<span class='ct-edit-cell' onclick='customTable.editCell(this.parentNode.parentNode," + i.toString() + ",\"" + _dataColumns[x].field + "\",\"" + getTableName() + "\");'>&para;</span>";
+			}
+			var childInd = "";
+			var hasChildren = "0";
+			if (_dataColumns[x].child != null && _dataColumns[x].child != 'undefined') {
+				childInd = "<span class='ct-div-row-expand' onclick='customTable.showChildren(this,\"" + _tableName + "\"," + keyType + val + keyType + ",\"" + _dataColumns[x].child + "\",\"" + _dataColumns[x].childKey + "\");'>+</span>";
+				hasChildren="1";
+			}
+			if (alt != null) alt.indexes[x].values.push({value: val, index: i});
+			if (visible == "")
+				t += "<div ctrow='" + i.toString() + "' ctchild='" + hasChildren + "' ctedit='" + _dataColumns[x].editType + "' tabindex='" + masterCount.toString() + "' name='" + _dataColumns[x].field + "' style='" + visible + "min-width:" + _tableWidths[x] + ";width:" + _tableWidths[x] + ";max-width:" + _tableWidths[x] + ";' class='ct-div-cell' onfocus='customTable.cancelEdit();'><span >" + childInd + edit + "<span>" + val + "</span></span></div>";
+			masterCount++;
+		}
+		return t;
+	},
+	
 	getTableName = function() {
 	    return _tableName;
 	},
@@ -204,7 +246,7 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 					if (e.altKey && e.ctrlKey && e.shiftKey) {
 						var ce = document.activeElement;
 						if (ce.getAttribute("ctedit") != null && ce.getAttribute('ctedit') != 'undefined') {
-							customTable.editCell(ce);
+							customTable.editCell(ce,ce.getAttribute("ctrow"),ce.getAttribute("name"),getTableName());
 						}
 					}
 					break;
@@ -436,19 +478,25 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		rebuildBody: rebuildBody,
 		sortByColumn: sortByColumn,
 		filterByColumn: filterByColumn,
-		buildHeader: buildHeader
+		buildHeader: buildHeader,
+		rebuildRow: rebuildRow
 	};
 };
 
 customTable.applyEdit = function() {
 	if (customTable._currentEdit == null || customTable._currentEdit == 'undefined') return;
-	customTable._currentEdit.innerHTML =  document.getElementById('floatingEdit').value;
+	if (customTable._currentEditRowIndex == null || customTable._currentEditRowIndex == 'undefined') return;
+	if (customTable._currentEditCellIndex == null || customTable._currentEditCellIndex == 'undefined') return;
+	if (customTable._currentEditTableName == null || customTable._currentEditTableName == 'undefined') return;
+	var val = document.getElementById('floatingEditText').value;
+	table.rebuildRow(customTable._currentEditRowIndex, customTable._currentEditCellIndex, val);
+	customTable._currentEdit.innerHTML = val;
 	customTable.closeEdit();
 };
 
 customTable.cancelEdit = function() {
 	if (customTable._currentEdit == null || customTable._currentEdit == 'undefined') return;
-	document.getElementById('floatingEdit').value = customTable._currentEdit.innerHTML;
+	document.getElementById('floatingEditText').value = customTable._currentEdit.innerHTML;
 	customTable.closeEdit();
 };
 
@@ -457,7 +505,7 @@ customTable.closeEdit = function() {
 	customTable._currentEdit.style.display = 'inline';
 };
 
-customTable.editCell = function(ce) {
+customTable.editCell = function(ce,row,cell,table1) {
 	if (customTable._currentEdit != null) customTable._currentEdit.style.display = 'inline';
 	switch (ce.getAttribute("ctedit")) {
 		case "1":
@@ -473,6 +521,9 @@ customTable.editCell = function(ce) {
 			t.childNodes[0].focus();
 			span.style.display = "none";
 			customTable._currentEdit = span;
+			customTable._currentEditRowIndex = row;
+			customTable._currentEditCellIndex = cell;
+			customTable._currentEditTableName = table1;
 			break;
 		case "0":
 		default:
