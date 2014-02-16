@@ -60,11 +60,12 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 	execSaveCallback = function() {
 		var result = false;
 		if (_editedData.length > 0) {
-			if (_saveCallback != null && _saveCallback == 'undefined')
+			if (typeof(_saveCallback) == 'function')
 				result = _saveCallback(_editedData);
 			else result = true;
 		}
 		else result = true;
+		if (result) _editedData = [];
 		return result;
 	},
 	
@@ -269,6 +270,12 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 							cx.childNodes[0].childNodes[0].click();
 						}
 					}
+					break;
+				case 83:
+					if (e.altKey && e.ctrlKey && e.shiftKey) {
+						customTable.saveEdits(getTableName());
+					}
+					break;
 				default:
 					break;
 			}
@@ -534,6 +541,8 @@ customTable.cancelEdit = function() {
 customTable.closeEdit = function() {
 	document.getElementById('floatingEdit').style.display = 'none';
 	customTable._currentEdit.style.display = 'inline';
+	customTable._currentEdit.parentNode.parentNode.focus();
+	customTable._currentEdit = null;
 };
 
 customTable.editCell = function(ce,row,cell,table1) {
