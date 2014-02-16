@@ -51,6 +51,7 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		_parentContainer = parentContainer,
 		_scrolling = false,
 		_unsortedIndex = {},
+		_tabIndex = [],
 		_currentIndex = {},
 		_dataSource = null,
 		_childRows = [],
@@ -95,6 +96,7 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
     
     loadTable = function(json) {
 		_unsortedIndex.indexes = [];
+		_tabIndex.indexes = [];
 		var alt ={};
 		
 		alt.name = _tableName;
@@ -233,8 +235,9 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 				hasChildren="1";
 			}
 			if (alt != null) alt.indexes[x].values.push({value: val, index: i});
+			_tabIndex.indexes.push({index: {row: i, cell: x}, value: masterCount});
 			if (visible == "")
-				t += "<div ctrow='" + i.toString() + "' ctchild='" + hasChildren + "' ctedit='" + _dataColumns[x].editType + "' tabindex='" + masterCount.toString() + "' name='" + _dataColumns[x].field + "' style='" + visible + "min-width:" + _tableWidths[x] + ";width:" + _tableWidths[x] + ";max-width:" + _tableWidths[x] + ";' class='ct-div-cell' onfocus='customTable.cancelEdit();'><span >" + childInd + edit + "<span>" + val + "</span></span></div>";
+				t += "<div id='ct_" + masterCount.toString() + "' ctrow='" + i.toString() + "' ctchild='" + hasChildren + "' ctedit='" + _dataColumns[x].editType + "' tabindex='" + masterCount.toString() + "' name='" + _dataColumns[x].field + "' style='" + visible + "min-width:" + _tableWidths[x] + ";width:" + _tableWidths[x] + ";max-width:" + _tableWidths[x] + ";' class='ct-div-cell' onfocus='customTable.cancelEdit();'><span >" + childInd + edit + "<span>" + val + "</span></span></div>";
 			masterCount++;
 		}
 		return t;
@@ -274,6 +277,46 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 				case 83:
 					if (e.altKey && e.ctrlKey && e.shiftKey) {
 						customTable.saveEdits(getTableName());
+					}
+					break;
+				case 33:
+					var kpuo = document.activeElement;
+					var tabindex = parseInt(kpuo.getAttribute("tabindex"));
+					if (tabindex != null && tabindex != 'undefined' && tabindex != NaN) {
+						if (tabindex > 500) {
+							var cell = document.getElementById("ct_" + (tabindex-500).toString());
+							if (cell != null && cell != 'undefined') cell.focus();
+						}
+					}
+					break;
+				case 38:
+					var kuo = document.activeElement;
+					var tabindex = parseInt(kuo.getAttribute("tabindex"));
+					if (tabindex != null && tabindex != 'undefined' && tabindex != NaN) {
+						if (tabindex > 100) {
+							var cell = document.getElementById("ct_" + (tabindex-100).toString());
+							if (cell != null && cell != 'undefined') cell.focus();
+						}
+					}
+					break;
+				case 34:
+					var kpdo = document.activeElement;
+					var tabindex = parseInt(kpdo.getAttribute("tabindex"));
+					if (tabindex != null && tabindex != 'undefined' && tabindex != NaN) {
+						if (tabindex < (100*(_dataSource.length+5))) {
+							var cell = document.getElementById("ct_" + (tabindex+500).toString());
+							if (cell != null && cell != 'undefined') cell.focus();
+						}
+					}
+					break;
+				case 40:
+					var kdo = document.activeElement;
+					var tabindex = parseInt(kdo.getAttribute("tabindex"));
+					if (tabindex != null && tabindex != 'undefined' && tabindex != NaN) {
+						if (tabindex < (100*(_dataSource.length+1))) {
+							var cell = document.getElementById("ct_" + (tabindex+100).toString());
+							if (cell != null && cell != 'undefined') cell.focus();
+						}
 					}
 					break;
 				default:
