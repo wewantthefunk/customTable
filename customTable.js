@@ -8,6 +8,7 @@ customTable.mouseX = 0;
 customTable.mouseY = 0;
 customTable._filterValues = [];
 customTable._currentSortIndex = 0;
+customTable._currentEdit = null;
 
 customTable.retrieveTable = function(name){
 	var result = null;
@@ -49,7 +50,8 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		_unsortedIndex = {},
 		_currentIndex = {},
 		_dataSource = null,
-
+		_childRows = [],
+	
     getDataColumns = function() {
         return _dataColumns;
     },
@@ -129,7 +131,9 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		
         _dataSource = JSON.parse(json);
 		var unsorted = [];
+		var masterCount = -99;
         for (var i = 0; i < _dataSource.length; i++) {
+			masterCount+=100;
 			unsorted.push({index:i});
             var t = "";
 			var keyType = "'";
@@ -150,14 +154,23 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 						keyType = "";
 						break;
 				} 
+				if (_dataColumns[x].editType == null || _dataColumns[x].editType == 'undefined') _dataColumns[x].editType = '0';
+				_dataColumns[x].editType == _dataColumns[x].editType.toString();
+				var edit = "";
+				if (parseInt(_dataColumns[x].editType) > 0) {
+					edit = "<span class='ct-edit-cell' onclick='customTable.editCell(this.parentNode.parentNode);'>&para;</span>";
+				}
 				var childInd = "";
+				var hasChildren = "0";
 				if (_dataColumns[x].child != null && _dataColumns[x].child != 'undefined') {
 					childInd = "<span class='ct-div-row-expand' onclick='customTable.showChildren(this,\"" + _tableName + "\"," + keyType + val + keyType + ",\"" + _dataColumns[x].child + "\",\"" + _dataColumns[x].childKey + "\");'>+</span>";
+					hasChildren="1";
 				}
 				alt.indexes[x].values.push({value: val, index: i});
 				if (visible == "")
-					t += "<div name='" + _dataColumns[x].field + "' style='" + visible + "min-width:" + _tableWidths[x] + ";width:" + _tableWidths[x] + ";max-width:" + _tableWidths[x] + ";' class='ct-div-cell'><span >" + childInd + val + "</span></div>";
-            }
+					t += "<div ctchild='" + hasChildren + "' ctedit='" + _dataColumns[x].editType + "' tabindex='" + masterCount.toString() + "' name='" + _dataColumns[x].field + "' style='" + visible + "min-width:" + _tableWidths[x] + ";width:" + _tableWidths[x] + ";max-width:" + _tableWidths[x] + ";' class='ct-div-cell' onfocus='customTable.cancelEdit();'><span >" + childInd + edit + "<span>" + val + "</span></span></div>";
+				masterCount++;
+			}
             if (t != "") _tableRows.push(t);
         }
 		
@@ -184,6 +197,31 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 		if (p == null) p = _parentContainer;
 		
 		if (p != null && p != 'undefined') p.innerHTML = returnAsHtml(_unsortedIndex.indexes[0]);
+		
+		customTable.addEvent(_parentContainer,'keyup',function(e) {
+			switch(e.keyCode) {
+				case 69:
+					if (e.altKey && e.ctrlKey && e.shiftKey) {
+						var ce = document.activeElement;
+						if (ce.getAttribute("ctedit") != null && ce.getAttribute('ctedit') != 'undefined') {
+							customTable.editCell(ce);
+						}
+					}
+					break;
+				case 88:
+					if (e.altKey && e.ctrlKey && e.shiftKey) {
+						var cx = document.activeElement;
+						console.log(cx);
+						if (cx.getAttribute("ctchild") == "1") {
+							cx.childNodes[0].childNodes[0].click();
+						}
+					}
+				default:
+					console.log(e.keyCode);
+					break;
+			}
+		}
+		);
 	},
 	
 	filterByColumn = function (altIndex,operator,value) {
@@ -254,7 +292,7 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 	},
 	
 	sortByColumn = function(altIndex) {
-	customTable._currentSortIndex = altIndex;
+		customTable._currentSortIndex = altIndex;
 		var foundIndex = customTable._findAlternateIndex(_tableName);
 		foundIndex.indexes[altIndex].currentSort++;
 		if (foundIndex.indexes[altIndex].currentSort > 2) foundIndex.indexes[altIndex].currentSort = 0;
@@ -322,11 +360,12 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 			result += "<div class='ct-back-to-top'><a onclick='window.scrollTo(0,0);'>Back to top</a></div>";
 			result += "<div id='customTableFloatingHeader' class='ct-div-header-row ct-div-floating-header-row' style='display:none;left:" + _parentContainer.getBoundingClientRect().left + "px;'>" + header + "</div>";
 			result += "<div id='customTableColFilter' class='ct-col-filter' style='display:none;' ctName='" + _tableName + "'><div>filter all values that are:</div><select id='customTableFilterOperator'><option value='='>=</option><option value='<'>&lt;</option></select><input id='customTableFilterValue' type='text' /><input type='button' value='apply' onclick='customTable.applyFilter(true);' /><input type='button' value='clear all' onclick='customTable.applyFilter(false);' /><input type='button' value='cancel' onclick='customTable.cancelFilter();'/></div>";
+			result += "<span id='floatingEdit'><input type='text' id='floatingEditText' /><input type='button' value='ok' onclick='customTable.applyEdit();' /><input type='button' value='cancel' onclick='customTable.cancelEdit();' /></span>";
 			
 			customTable.addEvent(window,"scroll",function(){
 				var tableTop = _parentContainer.getBoundingClientRect().top;
 				if (document.body.scrollTop > tableTop) {
-					document.getElementById("customTableFloatingHeader").style.display="table-cell";
+					document.getElementById("customTableFloatingHeader").style.display="block";
 				} else {
 					document.getElementById("customTableFloatingHeader").style.display="none";
 				}
@@ -346,7 +385,7 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 			if (_dataColumns[x].visible) {
 				header += "<div name='" + _dataColumns[x].field + "' style='width:" + _tableWidths[x] + ";min-width:" + _tableWidths[x] + ";' class='ct-div-header-cell'>";
 				if (main) {
-					header += "<a class='ct-header-filter' onclick='customTable.showFilter(this," + x.toString() + ");'>&Psi;</a><a class='ct-header-sort' name='sortInd" + x.toString() + "'></a><a onclick='customTable.sortGrid(\"" + _tableName + "\"," + x.toString() + ");' class='ct-div-header-cell-name'>";
+					header += "<a name='filter" + x.toString() + "' class='ct-header-filter' onclick='customTable.showFilter(this," + x.toString() + ");'>&Upsilon;</a><a class='ct-header-sort' name='sortInd" + x.toString() + "'></a><a onclick='customTable.sortGrid(\"" + _tableName + "\"," + x.toString() + ");' class='ct-div-header-cell-name'>";
 					header += _tableHeaders[x] + "</a>";
 				}
 				else {
@@ -401,36 +440,90 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 	};
 };
 
-customTable.showChildren = function (row,parentTable,parentKeyValue,child,childKey) {
-	var childTable = customTable.retrieveTable(child);
-	var childIndexes = customTable._findAlternateIndex(child);
-	var childIndex = null;
-	for (var i = 0; i < childIndexes.indexes.length; i++){
-		if (childIndexes.indexes[i].name == childKey) {
-			childIndex = childIndexes.indexes[i];
+customTable.applyEdit = function() {
+	if (customTable._currentEdit == null || customTable._currentEdit == 'undefined') return;
+	customTable._currentEdit.innerHTML =  document.getElementById('floatingEdit').value;
+	customTable.closeEdit();
+};
+
+customTable.cancelEdit = function() {
+	if (customTable._currentEdit == null || customTable._currentEdit == 'undefined') return;
+	document.getElementById('floatingEdit').value = customTable._currentEdit.innerHTML;
+	customTable.closeEdit();
+};
+
+customTable.closeEdit = function() {
+	document.getElementById('floatingEdit').style.display = 'none';
+	customTable._currentEdit.style.display = 'inline';
+};
+
+customTable.editCell = function(ce) {
+	if (customTable._currentEdit != null) customTable._currentEdit.style.display = 'inline';
+	switch (ce.getAttribute("ctedit")) {
+		case "1":
+			var t = document.getElementById('floatingEdit');
+			var span = ce.childNodes[0].childNodes[ce.childNodes[0].childNodes.length-1];
+			t.style.left = span.getBoundingClientRect().left;
+			t.style.top = span.getBoundingClientRect().top;
+			t.style.display = "inline";
+			t.childNodes[0].setAttribute('tabindex',ce.getAttribute('tabindex'));
+			t.childNodes[1].setAttribute('tabindex',ce.getAttribute('tabindex'));
+			t.childNodes[2].setAttribute('tabindex',ce.getAttribute('tabindex'));
+			t.childNodes[0].value = span.innerHTML;
+			t.childNodes[0].focus();
+			span.style.display = "none";
+			customTable._currentEdit = span;
 			break;
-		}
+		case "0":
+		default:
+			break;
 	}
-	if (childIndex != null && childIndex != 'undefined') {
-		var childRowIndexes = customTable.getAllIndexesNonUniqueAlternate(parentKeyValue,childIndex.values,"value","index");
-		var childRows = childTable.getTableRows(childRowIndexes)
-		var newTableRow = document.createElement("div");
-		newTableRow.className='ct-div-child-row';
-		newTableRow.style.display="table";
-		newTableRow.style.width = (parseFloat(row.parentNode.parentNode.parentNode.getBoundingClientRect().width) - 50.0).toString() + 'px';
-		var headerRow = document.createElement("div");
-		headerRow.className = "ct-div-header-row";
-		var header = childTable.buildHeader(false);
-		headerRow.innerHTML = header.substring(31,header.length-6);
-		newTableRow.appendChild(headerRow);
-		for (var x = 0; x < childRows.length; x++) {			
-			var newRow = document.createElement("div");
-			newRow.className = "ct-div-row";
-			newRow.style.display = "table-row";
-			newRow.innerHTML = childRows[x];
-			newTableRow.appendChild(newRow);
+};
+
+customTable.showChildren = function (row,parentTable,parentKeyValue,child,childKey) {
+	if (row.innerHTML == "+") {
+		var childTable = customTable.retrieveTable(child);
+		var childIndexes = customTable._findAlternateIndex(child);
+		var childIndex = null;
+		for (var i = 0; i < childIndexes.indexes.length; i++){
+			if (childIndexes.indexes[i].name == childKey) {
+				childIndex = childIndexes.indexes[i];
+				break;
+			}
 		}
-		customTable._insertNodeAfter(row.parentNode.parentNode.parentNode.parentNode,newTableRow,row.parentNode.parentNode.parentNode);
+		if (childIndex != null && childIndex != 'undefined') {
+			var childRowIndexes = customTable.getAllIndexesNonUniqueAlternate(parentKeyValue,childIndex.values,"value","index");
+			var childRows = childTable.getTableRows(childRowIndexes)
+			if (childRows.length > 0) {
+				var newTableRow = document.createElement("div");
+				newTableRow.className='ct-div-child-row';
+				newTableRow.style.display="table";
+				newTableRow.style.width = (parseFloat(row.parentNode.parentNode.parentNode.getBoundingClientRect().width) - 50.0).toString() + 'px';
+				var headerRow = document.createElement("div");
+				headerRow.className = "ct-div-header-row";
+				var header = childTable.buildHeader(false);
+				headerRow.innerHTML = header.substring(31,header.length-6);
+				newTableRow.appendChild(headerRow);
+				for (var x = 0; x < childRows.length; x++) {			
+					var newRow = document.createElement("div");
+					newRow.className = "ct-div-row";
+					newRow.style.display = "table-row";
+					newRow.innerHTML = childRows[x];
+					newRow.setAttribute("tabindex","");
+					newTableRow.appendChild(newRow);
+					customTable._insertNodeAfter(row.parentNode.parentNode.parentNode.parentNode,newTableRow,row.parentNode.parentNode.parentNode);
+					var nextIndex = parseInt(row.parentNode.parentNode.parentNode.childNodes[row.parentNode.parentNode.parentNode.childNodes.length-1].getAttribute("tabindex")) + 1;
+					for (var z = 0; z < newTableRow.childNodes[1].childNodes.length; z++) {
+						newTableRow.childNodes[1].childNodes[z].setAttribute('tabindex',nextIndex.toString());
+						nextIndex++;
+					}
+				}				
+				row.innerHTML = "-";
+			}
+		}
+	} else if (row.innerHTML == "-") {
+		row.parentNode.parentNode.parentNode.parentNode.removeChild(row.parentNode.parentNode.parentNode.nextSibling);
+		row.innerHTML = "+";
 	}
 };
 
@@ -465,7 +558,9 @@ customTable.applyFilter = function(apply){
 		op = e.options[e.selectedIndex].value;
 		val = document.getElementById('customTableFilterValue').value;
 		if (customTable._openFilter != null){
-			customTable._openFilter.className = "ct-header-filter ct-header-filter-applied";
+			var fs = document.getElementsByName(customTable._openFilter.getAttribute("name"));
+			for (var x = 0; x < fs.length; x++)
+				fs[x].className = "ct-header-filter ct-header-filter-applied";
 		}
 	} else {
 		var filters = document.getElementsByClassName('ct-header-filter');

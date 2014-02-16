@@ -56,8 +56,17 @@
 	float:left;
 	z-index:10;
 	position:relative;
-	padding-right:1em;
+	padding-right:.3em;
 	cursor:pointer;
+	padding-left:.3em;
+	padding-bottom:.3em;
+	padding-top:.3em;
+	border:1px solid #888;
+	border-radius:4px;
+	margin-left:.3em;
+	margin-right:.4em;
+	font-family:"Courier New", Courier, monospace;
+	font-size:.7em;
 }
 
 .ct-div-header-row div{
@@ -80,7 +89,6 @@
 	left:0;
 	z-index:10;
 }
-
 
 .ct-div-header-row {
 	display: table-row;
@@ -156,8 +164,25 @@
 }
 
 .ct-div-child-row {
-	margin-left:50px;
-	margin-top:10px;
-	margin-bottom:10px;
-	box-shadow:1px 1px 1px;
+	padding-left:38px;
+	padding-top:4px;
+	padding-bottom:10px;
+	padding-right:10px;
+	border-right: 1px solid #999;
+	border-left: 1px solid #999;
+	border-bottom: 1px solid #999;
+}
+
+.ct-edit-cell {
+	margin-right:.4em;
+	cursor:pointer;
+	padding:.3em;
+	border:1px solid #888;
+	border-radius:4px;
+	font-size:.7em;
+}
+
+#floatingEdit {
+	position:fixed;
+	display:none;
 }

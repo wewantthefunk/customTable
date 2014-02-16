@@ -9,8 +9,8 @@
 
 <script type='text/javascript' src='customTable.js'></script>
 <script type="text/javascript">
-	var table = customTable.initTable("test", [{field: "Name", title: "Customer Name"},
-												{field: "Email", title: "email"},
+	var table = customTable.initTable("test", [{field: "Name", title: "Customer Name", editType:"1"},
+												{field: "Email", title: "email", editType:"1"},
 												{field: "Id",title:"Customer Id",dataType:"int",child: "addressTest", childKey: "Id"}
 											  ], 
 										document.getElementById('test'),
