@@ -289,12 +289,32 @@ customTable._customTableDefinition = function(name, dataCols, parentContainer, u
 						}
 					}
 					break;
+				case 37:
+					var klo = document.activeElement;
+					var tabindex = parseInt(klo.getAttribute("tabindex"));
+					if (tabindex != null && tabindex != 'undefined' && tabindex != NaN) {
+						if (tabindex > 0) {
+							var cell = document.getElementById("ct_" + (tabindex-1).toString());
+							if (cell != null && cell != 'undefined') cell.focus();
+						}
+					}
+					break;
 				case 38:
 					var kuo = document.activeElement;
 					var tabindex = parseInt(kuo.getAttribute("tabindex"));
 					if (tabindex != null && tabindex != 'undefined' && tabindex != NaN) {
 						if (tabindex > 100) {
 							var cell = document.getElementById("ct_" + (tabindex-100).toString());
+							if (cell != null && cell != 'undefined') cell.focus();
+						}
+					}
+					break;
+				case 39:
+					var klo = document.activeElement;
+					var tabindex = parseInt(klo.getAttribute("tabindex"));
+					if (tabindex != null && tabindex != 'undefined' && tabindex != NaN) {
+						if (tabindex < (100*(_dataSource.length+1))) {
+							var cell = document.getElementById("ct_" + (tabindex+1).toString());
 							if (cell != null && cell != 'undefined') cell.focus();
 						}
 					}
